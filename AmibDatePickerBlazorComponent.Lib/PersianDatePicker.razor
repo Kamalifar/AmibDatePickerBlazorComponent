@@ -1,0 +1,145 @@
+﻿@typeparam T
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.JSInterop
+@using System.Diagnostics.CodeAnalysis
+@using System.Globalization
+@using DNTPersianUtils.Core
+@inherits Microsoft.AspNetCore.Components.Forms.InputBase<T>
+@using Microsoft.AspNetCore.Components;
+
+<div class="input-group mb-@MarginBottom">
+    <span class="input-group-text" style="cursor:pointer"
+          onclick="PersianDatePicker.Show(document.getElementById('@ElementId'), '@Today')">
+        📅
+    </span>
+    <input
+        @attributes="@AdditionalAttributes"
+        type="text" dir="ltr"
+        @ref="ElementReference"
+        name="@ElementId" id="@ElementId"
+        autocapitalize="off" autocorrect="off" autocomplete="off"
+        class="@CssClass"
+        value="@EnteredValue"
+        @oninput="OnInput"/>
+
+    @if (ValueExpression is not null)
+    {
+        <ValidationMessage For="@ValueExpression"/>
+    }
+</div>
+
+@code
+{
+    private string? _enteredValue;
+    private bool _isDisposed;
+    private DotNetObjectReference<PersianDatePicker<T>>? _objectReference;
+    private string ElementId { get; } = Guid.NewGuid().ToString("N");
+    private ElementReference? ElementReference { set; get; }
+    private string Today { get; } = DateTime.Now.ToShortPersianDateString();
+
+    [Inject] private IJSRuntime JsRuntime { set; get; } = default!;
+
+    private string? EnteredValue
+    {
+        set => _enteredValue = value;
+        get => UsePersianNumbers ? _enteredValue.ToPersianNumbers() : _enteredValue;
+    }
+
+    [Parameter] public bool UsePersianNumbers { set; get; }
+
+    [Parameter] public string ParsingErrorMessage { get; set; } = "لطفا در ورودی {0} تاریخ شمسی معتبری را وارد نمائید.";
+
+    [Parameter] public int BeginningOfCentury { set; get; } = 1400;
+
+    [Parameter] public int MarginBottom { set; get; } = 3;
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _objectReference = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("activateDatePicker.enableDatePicker", ElementReference, _objectReference);
+            EnteredValue = CurrentValueAsString;
+            StateHasChanged();
+        }
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        SetCurrentValue(e.Value as string);
+    }
+
+    private void SetCurrentValue(string? value)
+    {
+        EnteredValue = value;
+        CurrentValueAsString = value;
+    }
+
+    [JSInvokable]
+    public void OnInputFieldChanged(string? value)
+    {
+        SetCurrentValue(value);
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        SanityCheck();
+    }
+
+    protected override bool TryParseValueFromString(
+        string? value,
+        [MaybeNullWhen(false)] out T result,
+        [NotNullWhen(false)] out string? validationErrorMessage)
+    {
+        validationErrorMessage = string.Format(CultureInfo.InvariantCulture, ParsingErrorMessage, DisplayName);
+        if (!value.TryParsePersianDateToDateTimeOrDateTimeOffset(out result, BeginningOfCentury))
+        {
+            return false;
+        }
+
+        if (result is null)
+        {
+            throw new InvalidOperationException(validationErrorMessage);
+        }
+
+        validationErrorMessage = null;
+        return true;
+    }
+
+    protected override string FormatValueAsString(T? value)
+    {
+        return !string.IsNullOrWhiteSpace(EnteredValue) ? EnteredValue : value.FormatDateToShortPersianDate();
+    }
+
+    private void SanityCheck()
+    {
+        if (!Value.IsDateTimeOrDateTimeOffsetType())
+        {
+            throw new InvalidOperationException(
+                "The `Value` type is not a supported `date` type. DateTime, DateTime?, DateTimeOffset and DateTimeOffset? are supported.");
+        }
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (!_isDisposed)
+        {
+            try
+            {
+                _objectReference?.Dispose();
+            }
+            finally
+            {
+                _isDisposed = true;
+            }
+        }
+    }
+}

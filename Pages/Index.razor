@@ -1,0 +1,71 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components
+@using System.Text.Json
+
+<PageTitle>Index</PageTitle>
+
+<h3>ورودی تاریخ شمسی به همراه امکان انتخاب آن از یک تقویم شمسی</h3>
+<hr/>
+
+<EditForm class="container" Model="Model" OnValidSubmit="DoSave">
+    <DataAnnotationsValidator/>
+
+    <div class="row mb-2">
+        <label class="col-form-label col-lg-3">نام کاربری</label>
+        <div class="col-lg-9">
+            <InputText class="form-control" @bind-Value="Model.Name"/>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <label class="col-form-label col-lg-3">تاریخ تولد</label>
+        <div class="col-lg-9">
+            <PersianDatePicker
+                @bind-Value="Model.BirthDayGregorian"
+                UsePersianNumbers="false"
+                class="form-control"/>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <label class="col-form-label col-lg-3">تاریخ ورود</label>
+        <div class="col-lg-9">
+            <PersianDatePicker
+                @bind-Value="Model.LoginAt"
+                UsePersianNumbers="true"
+                class="form-control"/>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <label class="col-form-label col-lg-3">تاریخ خروج</label>
+        <div class="col-lg-9">
+            <PersianDatePicker
+                @bind-Value="Model.LogoutAt"
+                UsePersianNumbers="true"
+                class="form-control"/>
+        </div>
+    </div>
+
+    <div class="row mb-2">
+        <label class="col-form-label col-lg-3">تاریخ ثبت نام</label>
+        <div class="col-lg-9">
+            <PersianDatePicker
+                @bind-Value="Model.RegisterAt"
+                UsePersianNumbers="true"
+                class="form-control"/>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg">ارسال</button>
+</EditForm>
+<h1>@Model.BirthDayGregorian</h1>
+@code
+{
+    private InputPersianDateViewModel Model { get; } = new();
+
+    private void DoSave()
+    {
+        Console.WriteLine(JsonSerializer.Serialize(Model));
+    }
+}
