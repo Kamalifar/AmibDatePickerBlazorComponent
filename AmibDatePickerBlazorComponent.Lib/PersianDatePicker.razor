@@ -8,10 +8,6 @@
 @using Microsoft.AspNetCore.Components;
 
 <div class="input-group mb-@MarginBottom">
-    <span class="input-group-text" style="cursor:pointer"
-          onclick="PersianDatePicker.Show(document.getElementById('@ElementId'), '@Today')">
-        📅
-    </span>
     <input
         @attributes="@AdditionalAttributes"
         type="text" dir="ltr"
@@ -64,7 +60,7 @@
         if (firstRender)
         {
             _objectReference = DotNetObjectReference.Create(this);
-            await JsRuntime.InvokeVoidAsync("activateDatePicker.enableDatePicker", ElementReference, _objectReference);
+            await JsRuntime.InvokeVoidAsync("callAmib", ElementId, _objectReference);
             EnteredValue = CurrentValueAsString;
             StateHasChanged();
         }
